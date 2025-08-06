@@ -116,7 +116,7 @@ class OutstandingController extends Controller
 
                 $convertDate = function($date) {
                     if (empty($date)) return null;
-                    return date('Y-m-d H:i:s', strtotime($date));
+                    return date('Y-m-d', strtotime($date));
                 };
 
                 // dd($row);

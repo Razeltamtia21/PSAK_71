@@ -388,12 +388,14 @@ class tblcorporateController extends Controller
             // Coba parse tanggal dengan format yang diharapkan
             $date = \DateTime::createFromFormat('Y-m-d', $value);
             if ($date) {
-                return $date->format('Y-m-d H:i:s');
+                // return $date->format('Y-m-d H:i:s');
+                return $date->format('Y-m-d');
             }
             
             // Jika format pertama gagal, coba format lain
             $date = \DateTime::createFromFormat('d/m/Y', $value);
             if ($date) {
+                // return $date->format('Y-m-d H:i:s');
                 return $date->format('Y-m-d H:i:s');
             }
 

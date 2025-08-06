@@ -142,22 +142,22 @@
                                     <td>{{ $tb->status }}</td>
                                     <td>{{ $tb->nama_debitur }}</td>
                                     <td>{{ $tb->maksimal_kredit }}</td>
-                                    <td>{{ $tb->tanggal_realisasi }}</td>
+                                    <td>{{ $tb->tanggal_realisasi ? date('d/m/Y', strtotime($tb->tanggal_realisasi)) : '' }}</td>
                                     <td>{{ $tb->suku_bunga }}</td>
                                     <td>{{ $tb->jangka_waktu }}</td>
-                                    <td>{{ $tb->tgl_jatuh_tempo }}</td>
+                                    <td>{{ $tb->tgl_jatuh_tempo ? date('d/m/Y', strtotime($tb->tgl_jatuh_tempo)) : '' }}</td>
                                     <td>{{ $tb->sifat_kredit }}</td>
                                     <td>{{ $tb->jenis_kredit }}</td>
                                     <td>{{ $tb->jns_transaksi }}</td>
-                                    <td>{{ $tb->tgl_transaksi }}</td>
+                                    <td>{{ $tb->tgl_transaksi ? date('d/m/Y', strtotime($tb->tgl_transaksi)) : '' }}</td>
                                     <td>{{ $tb->nilai_penarikan }}</td>
                                     <td>{{ $tb->nilai_pengembalian }}</td>
                                     <td>{{ $tb->cbal }}</td>
-                                    <td>{{ $tb->cutoff_date }}</td>
+                                    <td>{{ $tb->cutoff_date ? date('d/m/Y', strtotime($tb->cutoff_date)) : '' }}</td>
                                     <td>{{ $tb->kelonggaran_tarik }}</td>
-                                    <td>{{ $tb->tgl_restruct }}</td>
-                                    <td>{{ $tb->tgl_restruct_review }}</td>
-                                    <td>{{ $tb->ket_restruct }}</td>
+                                    <td>{{ $tb->tgl_restruct ? date('d/m/Y', strtotime($tb->tgl_restruct)) : '' }}</td>
+                                    <td>{{ $tb->tgl_restruct_review ? date('d/m/Y', strtotime($tb->tgl_restruct_review)) : '' }}</td>
+                                    <td>{{ $tb->tgl_restruct_review ? date('d/m/Y', strtotime($tb->ket_restruct)) : '' }}</td>
                                     <td>{{ $tb->nominal_angsuran }}</td>
                                     <td>{{ $tb->status_psak }}</td>
                                 </tr>

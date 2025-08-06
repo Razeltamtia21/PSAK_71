@@ -107,10 +107,10 @@
                                 <td>{{ $item->status }}</td>
                                 <td>{{ $item->ln_type }}</td>
                                 <td>{{ $item->org_date }}</td>
-                                <td>{{ $item->org_date_dt }}</td>
+                                <td>{{ $item->org_date_dt ? date('d/m/Y', strtotime($item->org_date_dt)) : '' }}</td>
                                 <td>{{ $item->term }}</td>
                                 <td>{{ $item->mtr_date }}</td>
-                                <td>{{ $item->mtr_date_dt }}</td>
+                                <td>{{ $item->mtr_date_dt ? date('d/m/Y', strtotime($item->mtr_date_dt)) : '' }}</td>
                                 <td class="text-right">{{ number_format($item->org_bal, 2) }}</td>
                                 <td class="text-right">{{ number_format($item->rate * 100, 2) }}</td>
                                 <td class="text-right">{{ number_format($item->cbal, 2) }}</td>
@@ -120,20 +120,20 @@
                                 <td class="text-right">{{ number_format($item->prov, 2) }}</td>
                                 <td class="text-right">{{ number_format($item->trxcost, 2) }}</td>
                                 <td>{{ $item->lrebd }}</td>
-                                <td>{{ $item->lrebd_dt }}</td>
+                                <td>{{ $item->lrebd_dt ? date('d/m/Y', strtotime($item->lrebd_dt)) : '' }}</td>
                                 <td>{{ $item->nrebd }}</td>
-                                <td>{{ $item->nrebd_dt }}</td>
+                                <td>{{ $item->nrebd_dt ? date('d/m/Y', strtotime($item->nrebd_dt)) : '' }}</td>
                                 <td>{{ $item->ln_grp }}</td>
                                 <td>{{ $item->GROUP }}</td>
                                 <td class="text-right">{{ number_format($item->bilint, 2) }}</td>
                                 <td>{{ $item->bisifa }}</td>
                                 <td>{{ $item->birest }}</td>
                                 <td>{{ $item->freldt }}</td>
-                                <td>{{ $item->freldt_dt }}</td>
+                                <td>{{ $item->freldt_dt ? date('d/m/Y', strtotime($item->freldt_dt)) : '' }}</td>
                                 <td>{{ $item->resdt }}</td>
-                                <td>{{ $item->resdt_dt }}</td>
+                                <td>{{ $item->resdt_dt ? date('d/m/Y', strtotime($item->resdt_dt)) : '' }}</td>
                                 <td>{{ $item->restdt }}</td>
-                                <td>{{ $item->restdt_dt }}</td>
+                                <td>{{ $item->restdt_dt ? date('d/m/Y', strtotime($item->restdt_dt)) : '' }}</td>
                                 <td>{{ $item->gol }}</td>
                             </tr>
                             @endforeach
@@ -143,14 +143,14 @@
                                 <td colspan="13" class="text-end"><strong>TOTAL:</strong></td>
                                 <td class="text-right"><strong>{{ number_format($tblmaster->sum('org_bal'), 2) }}</strong></td>
                                 <td></td>
-                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('cbal'), 2) }}</strong></td>
-                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('prebal'), 2) }}</strong></td>
-                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('bilprn'), 2) }}</strong></td>
-                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('pmtamt'), 2) }}</strong></td>
-                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('prov'), 2) }}</strong></td>
-                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('trxcost'), 2) }}</strong></td>
+                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('cbal'), 0) }}</strong></td>
+                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('prebal'), 0) }}</strong></td>
+                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('bilprn'), 0) }}</strong></td>
+                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('pmtamt'), 0) }}</strong></td>
+                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('prov'), 0) }}</strong></td>
+                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('trxcost'), 0) }}</strong></td>
                                 <td colspan="7"></td>
-                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('bilint'), 2) }}</strong></td>
+                                <td class="text-right"><strong>{{ number_format($tblmaster->sum('bilint'), 0) }}</strong></td>
                                 <td colspan="9"></td>
                             </tr>
                         </tbody>
