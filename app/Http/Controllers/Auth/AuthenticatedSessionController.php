@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use App\Models\Pt; // Import pt
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
@@ -25,61 +26,53 @@ class AuthenticatedSessionController extends Controller
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): RedirectResponse
-{
-    $request->authenticate();
-    $request->session()->regenerate();
+    {
+        $request->authenticate();
+        $request->session()->regenerate();
 
-    // Ambil user yang login
-    $loggedInUser = $request->user();
+        // Ambil user yang login
+        $loggedInUser = $request->user();
 
-    // Cek aktivasi terlebih dahulu
-    if ($loggedInUser->is_activated == false) {
-        Auth::logout(); // Logout user jika belum diaktivasi
-        return redirect()->route('login')
-            ->with('error', 'Akun Anda belum diaktifkan. Silakan hubungi admin untuk aktivasi akun Anda.');
-    }
-
-    // Jika sudah aktivasi, ambil id_pt
-    $id_pt = $loggedInUser->pt;
-    if (is_null($id_pt)) {
-        return redirect()->route('login')
-            ->withErrors(['error' => 'ID PT tidak ditemukan untuk user ini.']);
-    }
-
-    // Fetch user's id_pt
-    $idpt = Auth::user()->id_pt;
-
-    // // Check if the user's image exists in the database
-    $image = DB::table('public.tbl_pt')
-    ->where('id_pt', $idpt)
-    ->value('image'); // Only fetch the image column
-
-    // Redirect berdasarkan peran user
-    if ($loggedInUser->role == 'superadmin') {
-        // return redirect()->route('superadmin.dashboard', ['id_pt' => $id_pt]);
-        if ($image) {
-            return redirect()->route('dashboard.index'); // Redirect to dashboard
-        } else {
-            return redirect()->route('report-initial-recognition.index'); // Redirect to report
+        // Cek aktivasi terlebih dahulu
+        if ($loggedInUser->is_activated == false) {
+            Auth::logout(); // Logout user jika belum diaktivasi
+            return redirect()->route('login')
+                ->with('error', 'Akun Anda belum diaktifkan. Silakan hubungi admin untuk aktivasi akun Anda.');
         }
-        // return redirect()->route('report-initial-recognition.index', ['id_pt' => $id_pt]);
-    } elseif ($loggedInUser->role == 'admin') {
-        // return redirect()->route('admin.dashboard', ['id_pt' => $id_pt]);
-        if ($image) {
-            return redirect()->route('dashboard.index'); // Redirect to dashboard
-        } else {
-            return redirect()->route('report-initial-recognition.index'); // Redirect to report
+
+        // Jika sudah aktivasi, ambil id_pt
+        $id_pt = $loggedInUser->id_pt;
+        if (is_null($id_pt)) {
+            Auth::logout();
+            return redirect()->route('login')
+                ->withErrors(['error' => 'ID PT tidak ditemukan untuk user ini.']);
         }
-        // return redirect()->route('report-initial-recognition.index', ['id_pt' => $id_pt]);
+
+        $idpt = Auth::user()->id_pt;
+        // // Check if the user's image exists in the database
+        $image = Pt::where('pt_id', $idpt)->value('image');
+        // Redirect berdasarkan peran user
+        if ($loggedInUser->role == 'superadmin') {
+            // return redirect()->route('superadmin.dashboard', ['id_pt' => $id_pt]);
+            if ($image) {
+                return redirect()->route('dashboard.index'); // Redirect to dashboard
+            } else {
+                return redirect()->route('report-initial-recognition.index'); // Redirect to report
+            }
+            // return redirect()->route('report-initial-recognition.index', ['id_pt' => $id_pt]);
+        } elseif ($loggedInUser->role == 'admin') {
+            // return redirect()->route('admin.dashboard', ['id_pt' => $id_pt]);
+            if ($image) {
+                return redirect()->route('dashboard.index'); // Redirect to dashboard
+            } else {
+                return redirect()->route('report-initial-recognition.index'); // Redirect to report
+            }
+            // return redirect()->route('report-initial-recognition.index', ['id_pt' => $id_pt]);
+        }
+
+        // return redirect()->route('dashboard', ['id_pt' => $id_pt]);
+        return redirect()->route('report-initial-recognition.index', ['id_pt' => $id_pt]);
     }
-
-    // return redirect()->route('dashboard', ['id_pt' => $id_pt]);
-    return redirect()->route('report-initial-recognition.index', ['id_pt' => $id_pt]);
-}
-
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
@@ -89,4 +82,6 @@ class AuthenticatedSessionController extends Controller
 
         return redirect('/');
     }
+
 }
+
