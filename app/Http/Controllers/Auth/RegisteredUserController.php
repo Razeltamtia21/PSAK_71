@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Pt; // Import pt
+use App\Models\pt; // Import pt
 use Illuminate\Support\Facades\DB;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -48,11 +48,11 @@ class RegisteredUserController extends Controller
             // Hilangkan spasi ekstra pada nama_pt
             $nama_pt = trim($request->nama_pt);
             // Cek apakah nama_pt sudah ada di tabel tbl_pt
-            $pt = Pt::where('nama_pt', $nama_pt)->first();
+            $pt = pt::where('nama_pt', $nama_pt)->first();
 
             if (!$pt) {
                 // Simpan entri baru dengan ID baru
-                $pt = Pt::create([
+                $pt = pt::create([
                     'nama_pt' => $nama_pt,
                     'alamat_pt' => $request->alamat_pt,
                     'company_type' => $request->company_type,
@@ -71,7 +71,7 @@ class RegisteredUserController extends Controller
                 'is_activated' => 'false', // Status aktivasi langsung 'aktif'
                 'password' => Hash::make($request->password),
                 //'id_pt' => $pt->id_pt, // Menyimpan id_pt yang diambil dari model_pt
-                'id_pt' => $pt->pt_id,
+                'id_pt' => $pt->id_pt,
             ]);
         });
 

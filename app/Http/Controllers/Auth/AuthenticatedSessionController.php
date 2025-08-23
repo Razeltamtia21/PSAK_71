@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use App\Models\Pt; // Import pt
+use App\Models\pt; // Import pt
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Log;
@@ -50,7 +50,7 @@ class AuthenticatedSessionController extends Controller
 
         $idpt = Auth::user()->id_pt;
         // // Check if the user's image exists in the database
-        $image = Pt::where('pt_id', $idpt)->value('image');
+        $image = pt::where('id_pt', $idpt)->value('image');
         // Redirect berdasarkan peran user
         if ($loggedInUser->role == 'superadmin') {
             // return redirect()->route('superadmin.dashboard', ['id_pt' => $id_pt]);

@@ -17,7 +17,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Color;
 use PhpOffice\PhpSpreadsheet\Writer\Pdf\Mpdf;
 
-use Illuminate\Support\Collection; 
+use Illuminate\Support\Collection;
 
 class effectiveController extends Controller
 {
@@ -30,10 +30,11 @@ class effectiveController extends Controller
         }
 
         $isSuperAdmin = $user->role === 'superadmin';
-        
+
+
         $branch = $request->input('branch', $user->id_pt);
 
-        if($branch != $user->id_pt){
+        if ($branch != $user->id_pt) {
             $branch = $user->id_pt;
         }
 
@@ -43,17 +44,25 @@ class effectiveController extends Controller
         // $result1 = InitialRecognitionEffective::getInitialRecognition('999', '2024', '5');;
         // dd($id_pt);
 
-        $loans = InitialRecognitionEffective::getInitialRecognition($branch, $tahun, $bulan);
-
+        try {
+            $loans = InitialRecognitionEffective::getInitialRecognition($branch, $tahun, $bulan);
+            return view('report.initial_recognition.effective.master', compact('loans', 'bulan', 'tahun', 'user', 'isSuperAdmin'));
+        } catch (\Exception $e) {
+            \Log::error('Error in report-initial-recognition: ' . $e->getMessage(), [
+                'branch' => $branch,
+                'tahun' => $tahun,
+                'bulan' => $bulan,
+                'request' => $request->all()
+            ]);
+            return redirect()->back()->with('error', 'Failed to fetch data: ' . $e->getMessage());
+        }
         // dd($loans);
-        
-        return view('report.initial_recognition.effective.master', compact('loans', 'bulan', 'tahun', 'user', 'isSuperAdmin'));
     }
 
     public function exportExcel(Request $request, $id_pt)
     {
         $user = Auth::user();
-        
+
         $namaBulan = [
             1 => 'January',
             2 => 'February',
@@ -68,8 +77,8 @@ class effectiveController extends Controller
             11 => 'November',
             12 => 'December'
         ];
-        
-        $bulan = $request->input('bulan', date('n')); 
+
+        $bulan = $request->input('bulan', date('n'));
         $tahun = $request->input('tahun', date('Y'));
 
         $bulanNama = $namaBulan[$bulan];
@@ -88,13 +97,13 @@ class effectiveController extends Controller
             ], 404);
         }
 
-        $bulanAngka =  $request->input('bulan', date('n'));
+        $bulanAngka = $request->input('bulan', date('n'));
         $loanFirst = $loans[0];
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->getPageSetup()->setOrientation(PageSetup::ORIENTATION_LANDSCAPE);
-        
+
         // // Set page orientation and size
         // $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
         // $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
@@ -107,7 +116,7 @@ class effectiveController extends Controller
             $loanFirst = $loans[0];
             // Set informasi pinjaman
             $sheet->setCellValue('A2', 'Entity Number');
-            $sheet->getStyle('A2')->getFont()->setBold(true); 
+            $sheet->getStyle('A2')->getFont()->setBold(true);
             $sheet->getStyle('C2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $sheet->setCellValue('C2', $loanFirst->no_branch);
             $sheet->setCellValue('A3', 'Entitiy Name');
@@ -118,7 +127,7 @@ class effectiveController extends Controller
             $sheet->getStyle('A4')->getFont()->setBold(true);
             $sheet->getStyle('C4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $sheet->setCellValue('C4', $bulanNama . ' - ' . $tahun);
-        }else{
+        } else {
             $sheet->setCellValue('C2', 'Tidak ada data');
             $sheet->setCellValue('C3', 'Tidak ada data');
         }
@@ -140,25 +149,41 @@ class effectiveController extends Controller
 
         // Set headers
         $headers = [
-            'No.', 'Entity Number', 'Account Number', 'Debitor Name', 'GL Account',
-            'Loan Type', 'GL Group', 'Original Date', 'Term (Months)', 'Interest Rate',
-            'Maturity Date', 'Payment Amount', 'Original Balance', 'Current Balance',
-            'Carrying Amount', 'EIR Amortised Cost Exposure', 'EIR Amortised Cost Calculated',
-            'EIR Calculated Convertion', 'EIR Calculated Transaction Cost',
-            'EIR Calculated UpFront Fee', 'Outstanding Amount',
-            'Outstanding Amount Initial Transaction Cost', 'Outstanding Amount Initial UpFront Fee'
+            'No.',
+            'Entity Number',
+            'Account Number',
+            'Debitor Name',
+            'GL Account',
+            'Loan Type',
+            'GL Group',
+            'Original Date',
+            'Term (Months)',
+            'Interest Rate',
+            'Maturity Date',
+            'Payment Amount',
+            'Original Balance',
+            'Current Balance',
+            'Carrying Amount',
+            'EIR Amortised Cost Exposure',
+            'EIR Amortised Cost Calculated',
+            'EIR Calculated Convertion',
+            'EIR Calculated Transaction Cost',
+            'EIR Calculated UpFront Fee',
+            'Outstanding Amount',
+            'Outstanding Amount Initial Transaction Cost',
+            'Outstanding Amount Initial UpFront Fee'
         ];
 
-    $columnIndex = 'A';
-    foreach ($headers as $header) {
-        $sheet->setCellValue($columnIndex . '8', $header);
-        $sheet->getStyle($columnIndex . '8')->getFont()->setBold(true);
-        $sheet->getStyle($columnIndex . '8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle($columnIndex . '8')->getFill()->setFillType(Fill::FILL_SOLID);
-        $sheet->getStyle($columnIndex . '8')->getFill()->getStartColor()->setARGB('FF4F81BD'); // Warna latar belakang header
-        $sheet->getStyle($columnIndex . '8')->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
-        $columnIndex++;
-    }
+        $columnIndex = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($columnIndex . '8', $header);
+            $sheet->getStyle($columnIndex . '8')->getFont()->setBold(true);
+            $sheet->getStyle($columnIndex . '8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle($columnIndex . '8')->getFill()->setFillType(Fill::FILL_SOLID);
+            $sheet->getStyle($columnIndex . '8')->getFill()->getStartColor()->setARGB('FF4F81BD'); // Warna latar belakang header
+            $sheet->getStyle($columnIndex . '8')->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
+            $columnIndex++;
+        }
 
         // Add data with styling
         $row = 9;
@@ -184,7 +209,7 @@ class effectiveController extends Controller
             $sheet->getStyle('I' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->setCellValue('I' . $row, $loan->term);
             $sheet->getStyle('J' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('J' . $row, number_format($loan->rate * 100,5).'%');
+            $sheet->setCellValue('J' . $row, number_format($loan->rate * 100, 5) . '%');
             $sheet->getStyle('K' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->setCellValue('K' . $row, $loan->mtrdtconv);
             $sheet->getStyle('L' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -196,15 +221,15 @@ class effectiveController extends Controller
             $sheet->getStyle('O' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->setCellValue('O' . $row, number_format($loan->baleir));
             $sheet->getStyle('P' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('P' . $row, number_format($loan->eirex * 100, 14).'%');
+            $sheet->setCellValue('P' . $row, number_format($loan->eirex * 100, 14) . '%');
             $sheet->getStyle('Q' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('Q' . $row, number_format($loan->eircalc * 100, 14).'%');
+            $sheet->setCellValue('Q' . $row, number_format($loan->eircalc * 100, 14) . '%');
             $sheet->getStyle('R' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('R' . $row, number_format($loan->eircalc_conv * 100, 14).'%');
+            $sheet->setCellValue('R' . $row, number_format($loan->eircalc_conv * 100, 14) . '%');
             $sheet->getStyle('S' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('S' . $row, number_format($loan->eircalc_cost * 100, 14).'%');
+            $sheet->setCellValue('S' . $row, number_format($loan->eircalc_cost * 100, 14) . '%');
             $sheet->getStyle('T' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('T' . $row, number_format($loan->eircalc_fee * 100, 14).'%');
+            $sheet->setCellValue('T' . $row, number_format($loan->eircalc_fee * 100, 14) . '%');
             $sheet->getStyle('U' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->setCellValue('U' . $row, number_format($loan->outsamtconv));
             $sheet->getStyle('V' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -221,11 +246,11 @@ class effectiveController extends Controller
             $row++;
         }
         $loansCollection = new Collection($loans);
-        $averageRate = $loansCollection->avg('rate'); 
-        $averageEirex = $loansCollection->avg('eirex'); 
-        $averageEircalc = $loansCollection->avg('eircalc'); 
-        $averageEircalcConv = $loansCollection->avg('eircalc_conv'); 
-        $averageRateEircalcCost = $loansCollection->avg('eircalc_cost'); 
+        $averageRate = $loansCollection->avg('rate');
+        $averageEirex = $loansCollection->avg('eirex');
+        $averageEircalc = $loansCollection->avg('eircalc');
+        $averageEircalcConv = $loansCollection->avg('eircalc_conv');
+        $averageRateEircalcCost = $loansCollection->avg('eircalc_cost');
         $averageEircalcFee = $loansCollection->avg('eircalc_fee');
         $totalPmtamt = $loansCollection->sum('pmtamt');
         $totalOrgBal = $loansCollection->sum('org_bal');
@@ -233,9 +258,9 @@ class effectiveController extends Controller
         $totalOutsamtconv = $loansCollection->sum('outsamtconv');
         $totalOutsamtcost = $loansCollection->sum('outsamtcost');
         $totalOutsamtfee = $loansCollection->sum('outsamtfee');
-   
+
         $sheet->setCellValue('A' . $row, "TOTAL:");
-        $sheet->mergeCells('A' . $row . ':I' . $row); 
+        $sheet->mergeCells('A' . $row . ':I' . $row);
         $sheet->getStyle('A' . $row . ':I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('J' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('J' . $row, number_format($averageRate * 100, 5) . '%');
@@ -246,19 +271,19 @@ class effectiveController extends Controller
         $sheet->getStyle('M' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('M' . $row, number_format($totalOrgBal));
         $sheet->getStyle('N' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('N' . $row,  number_format($totalOldbal));
+        $sheet->setCellValue('N' . $row, number_format($totalOldbal));
         $sheet->getStyle('O' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('O' . $row, null);
         $sheet->getStyle('P' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('P' . $row, number_format($averageEirex*100, 14).'%');
+        $sheet->setCellValue('P' . $row, number_format($averageEirex * 100, 14) . '%');
         $sheet->getStyle('Q' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('Q' . $row, number_format($averageEircalc*100, 14).'%');
+        $sheet->setCellValue('Q' . $row, number_format($averageEircalc * 100, 14) . '%');
         $sheet->getStyle('R' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('R' . $row, number_format($averageEircalcConv*100, 14).'%');
+        $sheet->setCellValue('R' . $row, number_format($averageEircalcConv * 100, 14) . '%');
         $sheet->getStyle('S' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('S' . $row, number_format($averageRateEircalcCost*100, 14).'%');
+        $sheet->setCellValue('S' . $row, number_format($averageRateEircalcCost * 100, 14) . '%');
         $sheet->getStyle('T' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('T' . $row, number_format($averageEircalcFee*100, 14).'%');
+        $sheet->setCellValue('T' . $row, number_format($averageEircalcFee * 100, 14) . '%');
         $sheet->getStyle('U' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('U' . $row, number_format($totalOutsamtconv));
         $sheet->getStyle('V' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -267,61 +292,61 @@ class effectiveController extends Controller
         $sheet->setCellValue('W' . $row, number_format($totalOutsamtfee));
 
 
-        
+
         $sheet->getStyle('A' . $row . ':W' . $row)->getFont()->setBold(true);
 
-       // Menambahkan warna latar belakang alternatif pada baris data
-   
+        // Menambahkan warna latar belakang alternatif pada baris data
+
         $sheet->getStyle('A' . $row . ':W' . $row)->getFill()->setFillType(Fill::FILL_SOLID);
         $sheet->getStyle('A' . $row . ':W' . $row)->getFill()->getStartColor()->setARGB('FFEFEFEF'); // Warna latar belakang untuk baris
 
 
-    // Mengatur border untuk tabel
-    $styleArray = [
-        'borders' => [
-            'allBorders' => [
-                'borderStyle' => Border::BORDER_THIN,
-                'color' => ['argb' => Color::COLOR_BLACK],
+        // Mengatur border untuk tabel
+        $styleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => Color::COLOR_BLACK],
+                ],
             ],
-        ],
-    ];
+        ];
 
-    $sheet->getStyle('A8:W8')->getAlignment()->setWrapText(true);
-    $sheet->getStyle('A8:W8')->getAlignment()->setVertical(Alignment::HORIZONTAL_CENTER);
-    $sheet->getColumnDimension('A')->setWidth(8);
-    $sheet->getColumnDimension('B')->setWidth(12);
-    $sheet->getColumnDimension('C')->setWidth(18);
-    $sheet->getColumnDimension('D')->setWidth(30);
-    $sheet->getColumnDimension('E')->setWidth(12);
-    $sheet->getColumnDimension('F')->setWidth(12);
-    $sheet->getColumnDimension('G')->setWidth(12);
-    $sheet->getColumnDimension('H')->setWidth(12);
-    $sheet->getColumnDimension('I')->setWidth(12);
-    $sheet->getColumnDimension('J')->setWidth(12);
-    $sheet->getColumnDimension('K')->setWidth(12);
-    $sheet->getColumnDimension('L')->setWidth(18);
-    $sheet->getColumnDimension('M')->setWidth(18);
-    $sheet->getColumnDimension('N')->setWidth(18);
-    $sheet->getColumnDimension('O')->setWidth(18);
-    $sheet->getColumnDimension('P')->setWidth(24);
-    $sheet->getColumnDimension('Q')->setWidth(24);
-    $sheet->getColumnDimension('R')->setWidth(24);
-    $sheet->getColumnDimension('S')->setWidth(24);
-    $sheet->getColumnDimension('T')->setWidth(24);
-    $sheet->getColumnDimension('U')->setWidth(18);
-    $sheet->getColumnDimension('V')->setWidth(24);
-    $sheet->getColumnDimension('W')->setWidth(24);
+        $sheet->getStyle('A8:W8')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A8:W8')->getAlignment()->setVertical(Alignment::HORIZONTAL_CENTER);
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(12);
+        $sheet->getColumnDimension('C')->setWidth(18);
+        $sheet->getColumnDimension('D')->setWidth(30);
+        $sheet->getColumnDimension('E')->setWidth(12);
+        $sheet->getColumnDimension('F')->setWidth(12);
+        $sheet->getColumnDimension('G')->setWidth(12);
+        $sheet->getColumnDimension('H')->setWidth(12);
+        $sheet->getColumnDimension('I')->setWidth(12);
+        $sheet->getColumnDimension('J')->setWidth(12);
+        $sheet->getColumnDimension('K')->setWidth(12);
+        $sheet->getColumnDimension('L')->setWidth(18);
+        $sheet->getColumnDimension('M')->setWidth(18);
+        $sheet->getColumnDimension('N')->setWidth(18);
+        $sheet->getColumnDimension('O')->setWidth(18);
+        $sheet->getColumnDimension('P')->setWidth(24);
+        $sheet->getColumnDimension('Q')->setWidth(24);
+        $sheet->getColumnDimension('R')->setWidth(24);
+        $sheet->getColumnDimension('S')->setWidth(24);
+        $sheet->getColumnDimension('T')->setWidth(24);
+        $sheet->getColumnDimension('U')->setWidth(18);
+        $sheet->getColumnDimension('V')->setWidth(24);
+        $sheet->getColumnDimension('W')->setWidth(24);
 
-// Set border untuk header tabel
-    $sheet->getStyle('A6:W6')->applyFromArray($styleArray);
+        // Set border untuk header tabel
+        $sheet->getStyle('A6:W6')->applyFromArray($styleArray);
 
-    // Set border untuk semua data laporan
-    $sheet->getStyle('A8:W' . $row)->applyFromArray($styleArray);
+        // Set border untuk semua data laporan
+        $sheet->getStyle('A8:W' . $row)->applyFromArray($styleArray);
 
-    // Mengatur lebar kolom agar lebih rapi
-    // foreach (range('A', 'W') as $columnID) {
-    //     $sheet->getColumnDimension($columnID)->setAutoSize(true);
-    // }
+        // Mengatur lebar kolom agar lebih rapi
+        // foreach (range('A', 'W') as $columnID) {
+        //     $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        // }
 
 
         // Set filename
@@ -339,7 +364,7 @@ class effectiveController extends Controller
     public function exportPdf(Request $request, $id_pt)
     {
         $user = Auth::user();
-        
+
         $namaBulan = [
             1 => 'January',
             2 => 'February',
@@ -354,8 +379,8 @@ class effectiveController extends Controller
             11 => 'November',
             12 => 'December'
         ];
-        
-        $bulan = $request->input('bulan', date('n')); 
+
+        $bulan = $request->input('bulan', date('n'));
         $tahun = $request->input('tahun', date('Y'));
 
         $bulanNama = $namaBulan[$bulan];
@@ -374,13 +399,13 @@ class effectiveController extends Controller
             ], 404);
         }
 
-        $bulanAngka =  $request->input('bulan', date('n'));
+        $bulanAngka = $request->input('bulan', date('n'));
         $loanFirst = $loans[0];
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->getPageSetup()->setOrientation(PageSetup::ORIENTATION_LANDSCAPE);
-        
+
         // // Set page orientation and size
         // $sheet->getPageSetup()->setOrientation(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::ORIENTATION_LANDSCAPE);
         // $sheet->getPageSetup()->setPaperSize(\PhpOffice\PhpSpreadsheet\Worksheet\PageSetup::PAPERSIZE_A4);
@@ -393,7 +418,7 @@ class effectiveController extends Controller
             $loanFirst = $loans[0];
             // Set informasi pinjaman
             $sheet->setCellValue('A2', 'Entity Number');
-            $sheet->getStyle('A2')->getFont()->setBold(true); 
+            $sheet->getStyle('A2')->getFont()->setBold(true);
             $sheet->getStyle('C2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $sheet->setCellValue('C2', $loanFirst->no_branch);
             $sheet->setCellValue('A3', 'Entitiy Name');
@@ -404,7 +429,7 @@ class effectiveController extends Controller
             $sheet->getStyle('A4')->getFont()->setBold(true);
             $sheet->getStyle('C4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
             $sheet->setCellValue('C4', $bulanNama . ' - ' . $tahun);
-        }else{
+        } else {
             $sheet->setCellValue('C2', 'Tidak ada data');
             $sheet->setCellValue('C3', 'Tidak ada data');
         }
@@ -423,25 +448,41 @@ class effectiveController extends Controller
 
         // Set headers
         $headers = [
-            'No.', 'Entity Number', 'Account Number', 'Debitor Name', 'GL Account',
-            'Loan Type', 'GL Group', 'Original Date', 'Term (Months)', 'Interest Rate',
-            'Maturity Date', 'Payment Amount', 'Original Balance', 'Current Balance',
-            'Carrying Amount', 'EIR Amortised Cost Exposure', 'EIR Amortised Cost Calculated',
-            'EIR Calculated Convertion', 'EIR Calculated Transaction Cost',
-            'EIR Calculated UpFront Fee', 'Outstanding Amount',
-            'Outstanding Amount Initial Transaction Cost', 'Outstanding Amount Initial UpFront Fee'
+            'No.',
+            'Entity Number',
+            'Account Number',
+            'Debitor Name',
+            'GL Account',
+            'Loan Type',
+            'GL Group',
+            'Original Date',
+            'Term (Months)',
+            'Interest Rate',
+            'Maturity Date',
+            'Payment Amount',
+            'Original Balance',
+            'Current Balance',
+            'Carrying Amount',
+            'EIR Amortised Cost Exposure',
+            'EIR Amortised Cost Calculated',
+            'EIR Calculated Convertion',
+            'EIR Calculated Transaction Cost',
+            'EIR Calculated UpFront Fee',
+            'Outstanding Amount',
+            'Outstanding Amount Initial Transaction Cost',
+            'Outstanding Amount Initial UpFront Fee'
         ];
 
-    $columnIndex = 'A';
-    foreach ($headers as $header) {
-        $sheet->setCellValue($columnIndex . '8', $header);
-        $sheet->getStyle($columnIndex . '8')->getFont()->setBold(true);
-        $sheet->getStyle($columnIndex . '8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet->getStyle($columnIndex . '8')->getFill()->setFillType(Fill::FILL_SOLID);
-        $sheet->getStyle($columnIndex . '8')->getFill()->getStartColor()->setARGB('FF4F81BD'); // Warna latar belakang header
-        $sheet->getStyle($columnIndex . '8')->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
-        $columnIndex++;
-    }
+        $columnIndex = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($columnIndex . '8', $header);
+            $sheet->getStyle($columnIndex . '8')->getFont()->setBold(true);
+            $sheet->getStyle($columnIndex . '8')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle($columnIndex . '8')->getFill()->setFillType(Fill::FILL_SOLID);
+            $sheet->getStyle($columnIndex . '8')->getFill()->getStartColor()->setARGB('FF4F81BD'); // Warna latar belakang header
+            $sheet->getStyle($columnIndex . '8')->getFont()->getColor()->setARGB(Color::COLOR_WHITE);
+            $columnIndex++;
+        }
 
         // Add data with styling
         $row = 9;
@@ -467,7 +508,7 @@ class effectiveController extends Controller
             $sheet->getStyle('I' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->setCellValue('I' . $row, $loan->term);
             $sheet->getStyle('J' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('J' . $row, number_format($loan->rate * 100,5).'%');
+            $sheet->setCellValue('J' . $row, number_format($loan->rate * 100, 5) . '%');
             $sheet->getStyle('K' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->setCellValue('K' . $row, $loan->mtrdtconv);
             $sheet->getStyle('L' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -479,15 +520,15 @@ class effectiveController extends Controller
             $sheet->getStyle('O' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->setCellValue('O' . $row, number_format($loan->baleir));
             $sheet->getStyle('P' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('P' . $row, number_format($loan->eirex * 100, 14).'%');
+            $sheet->setCellValue('P' . $row, number_format($loan->eirex * 100, 14) . '%');
             $sheet->getStyle('Q' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('Q' . $row, number_format($loan->eircalc * 100, 14).'%');
+            $sheet->setCellValue('Q' . $row, number_format($loan->eircalc * 100, 14) . '%');
             $sheet->getStyle('R' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('R' . $row, number_format($loan->eircalc_conv * 100, 14).'%');
+            $sheet->setCellValue('R' . $row, number_format($loan->eircalc_conv * 100, 14) . '%');
             $sheet->getStyle('S' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('S' . $row, number_format($loan->eircalc_cost * 100, 14).'%');
+            $sheet->setCellValue('S' . $row, number_format($loan->eircalc_cost * 100, 14) . '%');
             $sheet->getStyle('T' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->setCellValue('T' . $row, number_format($loan->eircalc_fee * 100, 14).'%');
+            $sheet->setCellValue('T' . $row, number_format($loan->eircalc_fee * 100, 14) . '%');
             $sheet->getStyle('U' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             $sheet->setCellValue('U' . $row, number_format($loan->outsamtconv));
             $sheet->getStyle('V' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -504,11 +545,11 @@ class effectiveController extends Controller
             $row++;
         }
         $loansCollection = new Collection($loans);
-        $averageRate = $loansCollection->avg('rate'); 
-        $averageEirex = $loansCollection->avg('eirex'); 
-        $averageEircalc = $loansCollection->avg('eircalc'); 
-        $averageEircalcConv = $loansCollection->avg('eircalc_conv'); 
-        $averageRateEircalcCost = $loansCollection->avg('eircalc_cost'); 
+        $averageRate = $loansCollection->avg('rate');
+        $averageEirex = $loansCollection->avg('eirex');
+        $averageEircalc = $loansCollection->avg('eircalc');
+        $averageEircalcConv = $loansCollection->avg('eircalc_conv');
+        $averageRateEircalcCost = $loansCollection->avg('eircalc_cost');
         $averageEircalcFee = $loansCollection->avg('eircalc_fee');
         $totalPmtamt = $loansCollection->sum('pmtamt');
         $totalOrgBal = $loansCollection->sum('org_bal');
@@ -516,9 +557,9 @@ class effectiveController extends Controller
         $totalOutsamtconv = $loansCollection->sum('outsamtconv');
         $totalOutsamtcost = $loansCollection->sum('outsamtcost');
         $totalOutsamtfee = $loansCollection->sum('outsamtfee');
-   
+
         $sheet->setCellValue('A' . $row, "TOTAL:");
-        $sheet->mergeCells('A' . $row . ':I' . $row); 
+        $sheet->mergeCells('A' . $row . ':I' . $row);
         $sheet->getStyle('A' . $row . ':I' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('J' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('J' . $row, number_format($averageRate * 100, 5) . '%');
@@ -529,19 +570,19 @@ class effectiveController extends Controller
         $sheet->getStyle('M' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('M' . $row, number_format($totalOrgBal));
         $sheet->getStyle('N' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('N' . $row,  number_format($totalOldbal));
+        $sheet->setCellValue('N' . $row, number_format($totalOldbal));
         $sheet->getStyle('O' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('O' . $row, null);
         $sheet->getStyle('P' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('P' . $row, number_format($averageEirex*100, 14).'%');
+        $sheet->setCellValue('P' . $row, number_format($averageEirex * 100, 14) . '%');
         $sheet->getStyle('Q' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('Q' . $row, number_format($averageEircalc*100, 14).'%');
+        $sheet->setCellValue('Q' . $row, number_format($averageEircalc * 100, 14) . '%');
         $sheet->getStyle('R' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('R' . $row, number_format($averageEircalcConv*100, 14).'%');
+        $sheet->setCellValue('R' . $row, number_format($averageEircalcConv * 100, 14) . '%');
         $sheet->getStyle('S' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('S' . $row, number_format($averageRateEircalcCost*100, 14).'%');
+        $sheet->setCellValue('S' . $row, number_format($averageRateEircalcCost * 100, 14) . '%');
         $sheet->getStyle('T' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet->setCellValue('T' . $row, number_format($averageEircalcFee*100, 14).'%');
+        $sheet->setCellValue('T' . $row, number_format($averageEircalcFee * 100, 14) . '%');
         $sheet->getStyle('U' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
         $sheet->setCellValue('U' . $row, number_format($totalOutsamtconv));
         $sheet->getStyle('V' . $row, $nourut)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
@@ -550,65 +591,65 @@ class effectiveController extends Controller
         $sheet->setCellValue('W' . $row, number_format($totalOutsamtfee));
 
 
-        
+
         $sheet->getStyle('A' . $row . ':W' . $row)->getFont()->setBold(true);
 
-       // Menambahkan warna latar belakang alternatif pada baris data
-   
+        // Menambahkan warna latar belakang alternatif pada baris data
+
         $sheet->getStyle('A' . $row . ':W' . $row)->getFill()->setFillType(Fill::FILL_SOLID);
         $sheet->getStyle('A' . $row . ':W' . $row)->getFill()->getStartColor()->setARGB('FFEFEFEF'); // Warna latar belakang untuk baris
 
 
-    // Mengatur border untuk tabel
-    $styleArray = [
-        'borders' => [
-            'allBorders' => [
-                'borderStyle' => Border::BORDER_THIN,
-                'color' => ['argb' => Color::COLOR_BLACK],
+        // Mengatur border untuk tabel
+        $styleArray = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['argb' => Color::COLOR_BLACK],
+                ],
             ],
-        ],
-    ];
+        ];
 
-    $sheet->getStyle('A8:W8')->getAlignment()->setWrapText(true);
-    $sheet->getStyle('A8:W8')->getAlignment()->setVertical(Alignment::HORIZONTAL_CENTER);
-    $sheet->getColumnDimension('A')->setWidth(8);
-    $sheet->getColumnDimension('B')->setWidth(12);
-    $sheet->getColumnDimension('C')->setWidth(18);
-    $sheet->getColumnDimension('D')->setWidth(30);
-    $sheet->getColumnDimension('E')->setWidth(12);
-    $sheet->getColumnDimension('F')->setWidth(12);
-    $sheet->getColumnDimension('G')->setWidth(12);
-    $sheet->getColumnDimension('H')->setWidth(12);
-    $sheet->getColumnDimension('I')->setWidth(12);
-    $sheet->getColumnDimension('J')->setWidth(12);
-    $sheet->getColumnDimension('K')->setWidth(12);
-    $sheet->getColumnDimension('L')->setWidth(18);
-    $sheet->getColumnDimension('M')->setWidth(18);
-    $sheet->getColumnDimension('N')->setWidth(18);
-    $sheet->getColumnDimension('O')->setWidth(18);
-    $sheet->getColumnDimension('P')->setWidth(24);
-    $sheet->getColumnDimension('Q')->setWidth(24);
-    $sheet->getColumnDimension('R')->setWidth(24);
-    $sheet->getColumnDimension('S')->setWidth(24);
-    $sheet->getColumnDimension('T')->setWidth(24);
-    $sheet->getColumnDimension('U')->setWidth(18);
-    $sheet->getColumnDimension('V')->setWidth(24);
-    $sheet->getColumnDimension('W')->setWidth(24);
+        $sheet->getStyle('A8:W8')->getAlignment()->setWrapText(true);
+        $sheet->getStyle('A8:W8')->getAlignment()->setVertical(Alignment::HORIZONTAL_CENTER);
+        $sheet->getColumnDimension('A')->setWidth(8);
+        $sheet->getColumnDimension('B')->setWidth(12);
+        $sheet->getColumnDimension('C')->setWidth(18);
+        $sheet->getColumnDimension('D')->setWidth(30);
+        $sheet->getColumnDimension('E')->setWidth(12);
+        $sheet->getColumnDimension('F')->setWidth(12);
+        $sheet->getColumnDimension('G')->setWidth(12);
+        $sheet->getColumnDimension('H')->setWidth(12);
+        $sheet->getColumnDimension('I')->setWidth(12);
+        $sheet->getColumnDimension('J')->setWidth(12);
+        $sheet->getColumnDimension('K')->setWidth(12);
+        $sheet->getColumnDimension('L')->setWidth(18);
+        $sheet->getColumnDimension('M')->setWidth(18);
+        $sheet->getColumnDimension('N')->setWidth(18);
+        $sheet->getColumnDimension('O')->setWidth(18);
+        $sheet->getColumnDimension('P')->setWidth(24);
+        $sheet->getColumnDimension('Q')->setWidth(24);
+        $sheet->getColumnDimension('R')->setWidth(24);
+        $sheet->getColumnDimension('S')->setWidth(24);
+        $sheet->getColumnDimension('T')->setWidth(24);
+        $sheet->getColumnDimension('U')->setWidth(18);
+        $sheet->getColumnDimension('V')->setWidth(24);
+        $sheet->getColumnDimension('W')->setWidth(24);
 
-// Set border untuk header tabel
-    $sheet->getStyle('A6:W6')->applyFromArray($styleArray);
+        // Set border untuk header tabel
+        $sheet->getStyle('A6:W6')->applyFromArray($styleArray);
 
-    // Set border untuk semua data laporan
-    $sheet->getStyle('A8:W' . $row)->applyFromArray($styleArray);
+        // Set border untuk semua data laporan
+        $sheet->getStyle('A8:W' . $row)->applyFromArray($styleArray);
 
-    // // Mengatur lebar kolom agar lebih rapi
-    // foreach (range('A', 'W') as $columnID) {
-    //     $sheet->getColumnDimension($columnID)->setAutoSize(true);
-    // }
+        // // Mengatur lebar kolom agar lebih rapi
+        // foreach (range('A', 'W') as $columnID) {
+        //     $sheet->getColumnDimension($columnID)->setAutoSize(true);
+        // }
 
         // Set pengaturan untuk PDF
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Pdf\Mpdf($spreadsheet);
-        
+
         // Siapkan direktori untuk menyimpan file sementara
         $temp_file = tempnam(sys_get_temp_dir(), 'phpspreadsheet_pdf');
 

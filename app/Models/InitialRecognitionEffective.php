@@ -9,7 +9,16 @@ class InitialRecognitionEffective extends Model
 {
     public static function getInitialRecognition($branch, $tahun, $bulan)
     {
-        return DB::select("
+        if (!is_numeric($branch) || !is_numeric($tahun) || !is_numeric($bulan)) {
+            \Log::warning('Invalid parameters in getInitialRecognition', [
+                'branch' => $branch,
+                'tahun' => $tahun,
+                'bulan' => $bulan
+            ]);
+            return collect([]);
+        }
+        try {
+            return DB::select("
             SELECT DISTINCT 
                 a.id,
                 a.no_branch,
@@ -48,5 +57,13 @@ class InitialRecognitionEffective extends Model
             AND b.BULANKE = 0
             AND a.NO_BRANCH::text = ?
         ", [$tahun, $bulan, $branch]);
+        } catch (\Exception $e) {
+            \Log::error('Error in getInitialRecognition: ' . $e->getMessage(), [
+                'branch' => $branch,
+                'tahun' => $tahun,
+                'bulan' => $bulan
+            ]);
+            return collect([]);
+        }
     }
 }

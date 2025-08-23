@@ -10,13 +10,40 @@ class UploadEffective extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'no_acc', 'no_branch', 'deb_name', 'status', 'ln_type',
-        'org_date', 'org_date_dt', 'term', 'mtr_date', 'mtr_date_dt',
-        'org_bal', 'rate', 'cbal', 'prebal', 'bilprn', 'pmtamt',
-        'lrebd', 'lrebd_dt', 'nrebd', 'nrebd_dt', 'ln_grp',
-        'GROUP', 'bilint', 'bisifa', 'birest', 'freldt', 'freldt_dt',
-        'resdt', 'resdt_dt', 'restdt', 'restdt_dt', 'prov',
-        'trxcost', 'gol'
+        'no_acc',
+        'no_branch',
+        'deb_name',
+        'status',
+        'ln_type',
+        'org_date',
+        'org_date_dt',
+        'term',
+        'mtr_date',
+        'mtr_date_dt',
+        'org_bal',
+        'rate',
+        'cbal',
+        'prebal',
+        'bilprn',
+        'pmtamt',
+        'lrebd',
+        'lrebd_dt',
+        'nrebd',
+        'nrebd_dt',
+        'ln_grp',
+        'GROUP',
+        'bilint',
+        'bisifa',
+        'birest',
+        'freldt',
+        'freldt_dt',
+        'resdt',
+        'resdt_dt',
+        'restdt',
+        'restdt_dt',
+        'prov',
+        'trxcost',
+        'gol'
     ];
 
     protected $casts = [
@@ -52,18 +79,26 @@ class UploadEffective extends Model
     /**
      * Scope query untuk mencari berdasarkan no_acc
      */
-    public function scopeByNoAcc($query, $noAcc)
+    public function scopeByNoAcc($query, $noAcc, $idPt)
     {
-        return $query->where('no_acc', $noAcc);
+        if (!is_numeric($noAcc) || $noAcc === '') {
+            \Log::warning('Invalid no_acc value', ['no_acc' => $noAcc, 'id_pt' => $idPt]);
+            throw new \Exception('Invalid or missing no_acc value');
+        }
+        if (!is_numeric($idPt)) {
+            \Log::warning('Invalid id_pt value', ['no_acc' => $noAcc, 'id_pt' => $idPt]);
+            throw new \Exception('Invalid or missing id_pt value');
+        }
+        return $query->where('no_acc', $noAcc)->where('id_pt', $idPt);
     }
 
     /**
      * Mengambil semua data
      */
     public static function fetchAll()
-{
-    return static::query(); // Mengembalikan query builder, bukan koleksi
-}
+    {
+        return static::query(); // Mengembalikan query builder, bukan koleksi
+    }
 
     /**
      * Memeriksa duplikasi no_acc
@@ -76,9 +111,17 @@ class UploadEffective extends Model
     /**
      * Mengambil data berdasarkan no_acc
      */
-    public static function findByNoAcc($noAcc)
+    public static function findByNoAcc($noAcc, $idPt)
     {
-        return static::where('no_acc', $noAcc)->first();
+        if (!is_numeric($noAcc) || $noAcc === '') {
+            \Log::warning('Invalid no_acc value', ['no_acc' => $noAcc, 'id_pt' => $idPt]);
+            throw new \Exception('Invalid or missing no_acc value');
+        }
+        if (!is_numeric($idPt)) {
+            \Log::warning('Invalid id_pt value', ['no_acc' => $noAcc, 'id_pt' => $idPt]);
+            throw new \Exception('Invalid or missing id_pt value');
+        }
+        return static::where('no_acc', $noAcc)->where('id_pt', $idPt)->first();
     }
 
     /**
